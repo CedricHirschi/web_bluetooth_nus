@@ -4,6 +4,7 @@ const btnSend = document.getElementById('send-btn');
 const inputSend = document.getElementById('send-text');
 const outputReceive = document.getElementById('receive-text');
 const statusLabel = document.getElementById('status-label');
+const warningBanner = document.getElementById('warning-banner');
 
 const nordicUARTService = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const nordicUARTTXCharacteristic = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
@@ -130,3 +131,41 @@ setInterval(() => {
             manageConnectionDisconnect()
         });
 }, 1000);
+
+// On website load, check if Bluetooth is available
+if (!('bluetooth' in navigator)) {
+    // disable all content, add banner to inform user
+    warningBanner.style.display = 'block';
+    btnConnect.disabled = true;
+    statusLabel.textContent = 'Bluetooth not available';
+
+    // get os of user
+    const user = navigator.userAgent;
+    const os = user.includes('Android') ? 'Android' : user.includes('iPhone') || user.includes('iPad') ? 'iOS' : user.includes('Linux') ? 'Linux' : user.includes('Windows') ? 'Windows' : user.includes('Mac') ? 'MacOS' : 'Unknown';
+
+    warningBanner.innerHTML = `<strong>Warning!</strong> Bluetooth is not available in this session.<br><br>`;
+
+    switch (os) {
+        case 'Android':
+            warningBanner.innerHTML += `On Android, please use Chrome.`;
+            break;
+        case 'iOS':
+            warningBanner.innerHTML += `On iOS, please use Safari.`;
+            break;
+        case 'Linux':
+            warningBanner.innerHTML += `On Linux, please use Chrome.<br><br>`;
+            warningBanner.innerHTML += `You may need to enable the flag "Experimental Web Platform features" by entering the following URL into your browser's address bar and setting the flag to <strong>Enabled</strong>:<br><code>chrome://flags/#enable-experimental-web-platform-features</code><br>`;
+            warningBanner.innerHTML += `You may need to enable the flag "Web Bluetooth New Permissions Backend" by entering the following URL into your browser's address bar and setting the flag to <strong>Enabled</strong>:<br><code>chrome://flags/#enable-web-bluetooth-new-permissions-backend</code>`;
+            break;
+        case 'Windows':
+            warningBanner.innerHTML += `On Windows, please use Chrome.`;
+            break;
+        case 'MacOS':
+            warningBanner.innerHTML += `On MacOS, please use Chrome.`;
+            break;
+    
+        default:
+            break;
+    }
+
+}
