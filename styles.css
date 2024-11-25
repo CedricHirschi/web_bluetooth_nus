@@ -1,0 +1,48 @@
+/* Received Data Textarea */
+#receive-text {
+    resize: none;
+}
+
+/* Status Bar Styling */
+#status-bar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #007acc;
+    color: white;
+    padding: 4px 8px;
+    font-family: sans-serif;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    z-index: 1000;
+}
+
+#status-message {
+    margin-left: 5px;
+}
+
+#status-device {
+    margin-left: auto;
+}
+
+/* Prevent Footer from Being Overlapped */
+body {
+    padding-bottom: 60px; /* Adjust this value if the status bar height changes */
+}
+
+/* Optional: Ensure Footer Stays Below Content */
+footer {
+    margin-top: 20px;
+}
+
+#receive-text {
+    resize: none;
+}
+
+/* Additional Styling for Clear Output Button Alignment */
+.clear-output-container {
+    display: flex;
+    justify-content: flex-end;
+}

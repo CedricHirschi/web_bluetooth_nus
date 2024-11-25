@@ -1,181 +1,78 @@
-const btnConnect = document.getElementById('connect-btn');
-const btnReceive = document.getElementById('receive-btn');
-const btnSend = document.getElementById('send-btn');
-const inputSend = document.getElementById('send-text');
-const outputReceive = document.getElementById('receive-text');
-const outputTimestamps = document.getElementById('receive-timestamps');
-const statusLabel = document.getElementById('status-label');
 const warningBanner = document.getElementById('warning-banner');
 
 const bluetoothHandler = new BluetoothNUSHandler();
+const gui = new GUI();
 
-btnConnect.addEventListener('click', async () => {
+gui.btnConnect.addEventListener('click', async () => {
     if (!bluetoothHandler.isConnected()) {
-        statusLabel.textContent = 'Connecting...';
-        btnConnect.textContent = 'Connecting...';
-        btnConnect.disabled = true;
+        gui.changeState(Status.CONNECTING);
         try {
             const deviceName = await bluetoothHandler.connect();
-            if (deviceName) {
-                btnConnect.textContent = 'Disconnect';
-                statusLabel.textContent = 'Connected to ' + deviceName;
-                btnConnect.disabled = false;
-                btnReceive.disabled = false;
-                btnSend.disabled = false;
-                inputSend.disabled = false;
-            } else {
-                statusLabel.textContent = 'No device selected';
-                btnConnect.textContent = 'Connect';
-                btnConnect.disabled = false;
-            }
+            
+            gui.changeState(Status.CONNECTED);
         } catch (error) {
-            statusLabel.textContent = 'Connection failed: ' + error;
+            gui.changeState(Status.LOST_CONNECTION, error);
             await bluetoothHandler.disconnect();
         }
     } else {
-        statusLabel.textContent = 'Disconnecting...';
-        btnConnect.textContent = 'Disconnecting...';
-        btnConnect.disabled = true;
+        gui.changeState(Status.DISCONNECTING);
+
         await bluetoothHandler.disconnect();
-        btnConnect.textContent = 'Connect';
-        statusLabel.textContent = 'Disconnected';
-        btnConnect.disabled = false;
-        btnReceive.disabled = true;
-        btnSend.disabled = true;
-        inputSend.disabled = true;
+        
+        gui.changeState(Status.DISCONNECTED);
     }
 });
 
-btnSend.addEventListener('click', async () => {
-    const text = inputSend.value;
-    if (!text) return;
+gui.btnSend.addEventListener('click', async () => {
+    const text = gui.getInputText();
+    if (!text) {
+        gui.displayWarning('No text to send');
+        return;
+    }
 
-    btnSend.textContent = 'Sending...';
-    btnSend.disabled = true;
-    inputSend.disabled = true;
+    gui.changeState(Status.SENDING);
 
     try {
         await bluetoothHandler.send(text);
     } catch (error) {
-        statusLabel.textContent = 'Send failed: ' + error;
+        gui.displayError('Error sending data: ' + error);
     } finally {
-        btnSend.textContent = 'Send';
-        btnSend.disabled = false;
-        inputSend.disabled = false;
+        gui.changeState(Status.SENT);
     }
 });
 
-function getFormattedTimestamp() {
-    const date = new Date();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
-    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
-}
-
-btnReceive.addEventListener('click', async () => {
+gui.btnReceive.addEventListener('click', async () => {
     if (!bluetoothHandler.isConnected()) return;
 
-    btnReceive.disabled = true;
-
-    if (btnReceive.textContent === 'Disable Reception') {
-        btnReceive.textContent = 'Disabling...';
+    if (gui.rxEnabled) {
+        gui.changeState(Status.DISABLING_RX);
         
         try {
             await bluetoothHandler.stopNotifications();
 
-            btnReceive.textContent = 'Enable Reception';
-            btnReceive.classList.replace('btn-danger', 'btn-success');
-            
-            statusLabel.textContent = 'Reception disabled';
+            gui.changeState(Status.DISABLED_RX);
         } catch (error) {
-            statusLabel.textContent = 'Error disabling reception: ' + error;
-            btnReceive.textContent = 'Disable Reception';
+            gui.displayWarning('Error disabling reception: ' + error);
+            gui.changeState(Status.ENABLED_RX);
         }
     } else {
-        btnReceive.textContent = 'Enabling...';
+        gui.changeState(Status.ENABLING_RX);
         
         try {
-            await bluetoothHandler.startNotifications((data) => {
-                outputTimestamps.textContent += getFormattedTimestamp() + '\n';
-                outputReceive.textContent += data;
+            await bluetoothHandler.startNotifications((data) => gui.addOutput(data));
 
-                // Scroll both textareas to the bottom
-                outputReceive.scrollTop = outputReceive.scrollHeight;
-                outputTimestamps.scrollTop = outputReceive.scrollTop;
-            });
-
-            btnReceive.textContent = 'Disable Reception';
-            btnReceive.classList.replace('btn-success', 'btn-danger');
-            btnReceive.disabled = false;
-
-            statusLabel.textContent = 'Reception enabled';
+            gui.changeState(Status.ENABLED_RX);
         } catch (error) {
-            statusLabel.textContent = 'Error enabling reception: ' + error;
-            btnReceive.textContent = 'Enable Reception';
+            gui.displayWarning('Error enabling reception: ' + error);
+            gui.changeState(Status.DISABLED_RX);
         }
     }
-
-    btnReceive.disabled = false;
-});
-
-// Synchronize scrolling between the two textareas
-outputReceive.addEventListener('scroll', () => {
-    outputTimestamps.scrollTop = outputReceive.scrollTop;
 });
 
 // Check connection every second
 setInterval(async () => {
-    if (bluetoothHandler.isConnected()) {
-        // statusLabel.textContent = 'Connected to ' + bluetoothHandler.deviceName;
-    } else {
-        if (btnReceive.textContent === 'Disable Reception') {
-            btnReceive.textContent = 'Enable Reception';
-            btnReceive.classList.replace('btn-danger', 'btn-success');
-        }
-        if (btnConnect.textContent === 'Connecting...') return;
-        btnConnect.textContent = 'Connect';
-        statusLabel.textContent = 'Disconnected';
-        btnReceive.disabled = true;
-        btnSend.disabled = true;
-        inputSend.disabled = true;
-    }
+    if (!bluetoothHandler.isConnected() && gui.isConnected) gui.changeState(Status.LOST_CONNECTION, 'Connection lost');
 }, 1000);
 
 // On website load, check if Bluetooth is available
-if (!('bluetooth' in navigator)) {
-    warningBanner.style.display = 'block';
-    btnConnect.disabled = true;
-    statusLabel.textContent = 'Bluetooth not available';
-
-    const user = navigator.userAgent;
-    const os = user.includes('Android') ? 'Android' :
-               user.includes('iPhone') || user.includes('iPad') ? 'iOS' :
-               user.includes('Linux') ? 'Linux' :
-               user.includes('Windows') ? 'Windows' :
-               user.includes('Mac') ? 'MacOS' : 'Unknown';
-
-    warningBanner.innerHTML = `<strong>Warning!</strong> Bluetooth is not available in this session.<br>`;
-
-    switch (os) {
-        case 'Android':
-            warningBanner.innerHTML += `On Android, please use Chrome.`;
-            break;
-        case 'iOS':
-            warningBanner.innerHTML += `On iOS, please use Safari.`;
-            break;
-        case 'Linux':
-            warningBanner.innerHTML += `On Linux, please use Chrome.<br>`;
-            warningBanner.innerHTML += `You may need to enable the flag "Experimental Web Platform features" by entering <code>chrome://flags/#enable-experimental-web-platform-features</code> into your browser's address bar as well as "Web Bluetooth New Permissions Backend" by entering <code>chrome://flags/#enable-web-bluetooth-new-permissions-backend</code>.`;
-            break;
-        case 'Windows':
-            warningBanner.innerHTML += `On Windows, please use Chrome.`;
-            break;
-        case 'MacOS':
-            warningBanner.innerHTML += `On MacOS, please use Chrome.`;
-            break;
-        default:
-            break;
-    }
-}
+if (!('bluetooth' in navigator)) gui.displayWarningBanner();
