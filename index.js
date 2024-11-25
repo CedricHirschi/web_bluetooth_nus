@@ -25,6 +25,8 @@ btnConnect.addEventListener('click', async () => {
                 inputSend.disabled = false;
             } else {
                 statusLabel.textContent = 'No device selected';
+                btnConnect.textContent = 'Connect';
+                btnConnect.disabled = false;
             }
         } catch (error) {
             statusLabel.textContent = 'Connection failed: ' + error;
