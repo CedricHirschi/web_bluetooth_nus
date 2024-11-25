@@ -32,6 +32,8 @@ btnConnect.addEventListener('click', async () => {
         }
     } else {
         statusLabel.textContent = 'Disconnecting...';
+        btnConnect.textContent = 'Disconnecting...';
+        btnConnect.disabled = true;
         await bluetoothHandler.disconnect();
         btnConnect.textContent = 'Connect';
         statusLabel.textContent = 'Disconnected';
@@ -44,7 +46,21 @@ btnConnect.addEventListener('click', async () => {
 
 btnSend.addEventListener('click', async () => {
     const text = inputSend.value;
-    await bluetoothHandler.send(text);
+    if (!text) return;
+
+    btnSend.textContent = 'Sending...';
+    btnSend.disabled = true;
+    inputSend.disabled = true;
+
+    try {
+        await bluetoothHandler.send(text);
+    } catch (error) {
+        statusLabel.textContent = 'Send failed: ' + error;
+    } finally {
+        btnSend.textContent = 'Send';
+        btnSend.disabled = false;
+        inputSend.disabled = false;
+    }
 });
 
 function getFormattedTimestamp() {
@@ -57,21 +73,49 @@ function getFormattedTimestamp() {
 }
 
 btnReceive.addEventListener('click', async () => {
-    if (btnReceive.textContent === 'Disable Reception') {
-        await bluetoothHandler.stopNotifications();
-        btnReceive.textContent = 'Enable Reception';
-    } else {
-        await bluetoothHandler.startNotifications((data) => {
-            const timestamp = getFormattedTimestamp();
-            outputTimestamps.textContent += `${timestamp}\n`;
-            outputReceive.textContent += data;
+    if (!bluetoothHandler.isConnected()) return;
 
-            // Scroll both textareas to the bottom
-            outputReceive.scrollTop = outputReceive.scrollHeight;
-            outputTimestamps.scrollTop = outputReceive.scrollTop;
-        });
-        btnReceive.textContent = 'Disable Reception';
+    btnReceive.disabled = true;
+
+    if (btnReceive.textContent === 'Disable Reception') {
+        btnReceive.textContent = 'Disabling...';
+        
+        try {
+            await bluetoothHandler.stopNotifications();
+
+            btnReceive.textContent = 'Enable Reception';
+            btnReceive.classList.replace('btn-danger', 'btn-success');
+            
+            statusLabel.textContent = 'Reception disabled';
+        } catch (error) {
+            statusLabel.textContent = 'Error disabling reception: ' + error;
+            btnReceive.textContent = 'Disable Reception';
+        }
+    } else {
+        btnReceive.textContent = 'Enabling...';
+        
+        try {
+            await bluetoothHandler.startNotifications((data) => {
+                outputTimestamps.textContent += getFormattedTimestamp() + '\n';
+                outputReceive.textContent += data;
+
+                // Scroll both textareas to the bottom
+                outputReceive.scrollTop = outputReceive.scrollHeight;
+                outputTimestamps.scrollTop = outputReceive.scrollTop;
+            });
+
+            btnReceive.textContent = 'Disable Reception';
+            btnReceive.classList.replace('btn-success', 'btn-danger');
+            btnReceive.disabled = false;
+
+            statusLabel.textContent = 'Reception enabled';
+        } catch (error) {
+            statusLabel.textContent = 'Error enabling reception: ' + error;
+            btnReceive.textContent = 'Enable Reception';
+        }
     }
+
+    btnReceive.disabled = false;
 });
 
 // Synchronize scrolling between the two textareas
@@ -82,11 +126,11 @@ outputReceive.addEventListener('scroll', () => {
 // Check connection every second
 setInterval(async () => {
     if (bluetoothHandler.isConnected()) {
-        statusLabel.textContent = 'Connected to ' + bluetoothHandler.deviceName;
+        // statusLabel.textContent = 'Connected to ' + bluetoothHandler.deviceName;
     } else {
         if (btnReceive.textContent === 'Disable Reception') {
-            await bluetoothHandler.stopNotifications();
             btnReceive.textContent = 'Enable Reception';
+            btnReceive.classList.replace('btn-danger', 'btn-success');
         }
         if (btnConnect.textContent === 'Connecting...') return;
         btnConnect.textContent = 'Connect';
