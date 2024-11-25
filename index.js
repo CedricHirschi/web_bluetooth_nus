@@ -3,19 +3,23 @@ const btnReceive = document.getElementById('receive-btn');
 const btnSend = document.getElementById('send-btn');
 const inputSend = document.getElementById('send-text');
 const outputReceive = document.getElementById('receive-text');
+const outputTimestamps = document.getElementById('receive-timestamps');
 const statusLabel = document.getElementById('status-label');
 const warningBanner = document.getElementById('warning-banner');
 
 const bluetoothHandler = new BluetoothNUSHandler();
 
 btnConnect.addEventListener('click', async () => {
-    if (!await bluetoothHandler.isConnected()) {
+    if (!bluetoothHandler.isConnected()) {
         statusLabel.textContent = 'Connecting...';
+        btnConnect.textContent = 'Connecting...';
+        btnConnect.disabled = true;
         try {
             const deviceName = await bluetoothHandler.connect();
             if (deviceName) {
                 btnConnect.textContent = 'Disconnect';
                 statusLabel.textContent = 'Connected to ' + deviceName;
+                btnConnect.disabled = false;
                 btnReceive.disabled = false;
                 btnSend.disabled = false;
                 inputSend.disabled = false;
@@ -31,6 +35,7 @@ btnConnect.addEventListener('click', async () => {
         await bluetoothHandler.disconnect();
         btnConnect.textContent = 'Connect';
         statusLabel.textContent = 'Disconnected';
+        btnConnect.disabled = false;
         btnReceive.disabled = true;
         btnSend.disabled = true;
         inputSend.disabled = true;
@@ -42,27 +47,48 @@ btnSend.addEventListener('click', async () => {
     await bluetoothHandler.send(text);
 });
 
+function getFormattedTimestamp() {
+    const date = new Date();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+}
+
 btnReceive.addEventListener('click', async () => {
     if (btnReceive.textContent === 'Disable Reception') {
         await bluetoothHandler.stopNotifications();
         btnReceive.textContent = 'Enable Reception';
     } else {
         await bluetoothHandler.startNotifications((data) => {
+            const timestamp = getFormattedTimestamp();
+            outputTimestamps.textContent += `${timestamp}\n`;
             outputReceive.textContent += data;
+
+            // Scroll both textareas to the bottom
+            outputReceive.scrollTop = outputReceive.scrollHeight;
+            outputTimestamps.scrollTop = outputReceive.scrollTop;
         });
         btnReceive.textContent = 'Disable Reception';
     }
 });
 
+// Synchronize scrolling between the two textareas
+outputReceive.addEventListener('scroll', () => {
+    outputTimestamps.scrollTop = outputReceive.scrollTop;
+});
+
 // Check connection every second
 setInterval(async () => {
-    if (await bluetoothHandler.isConnected()) {
+    if (bluetoothHandler.isConnected()) {
         statusLabel.textContent = 'Connected to ' + bluetoothHandler.deviceName;
     } else {
         if (btnReceive.textContent === 'Disable Reception') {
             await bluetoothHandler.stopNotifications();
             btnReceive.textContent = 'Enable Reception';
         }
+        if (btnConnect.textContent === 'Connecting...') return;
         btnConnect.textContent = 'Connect';
         statusLabel.textContent = 'Disconnected';
         btnReceive.disabled = true;

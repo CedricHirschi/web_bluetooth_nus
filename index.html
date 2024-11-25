@@ -48,9 +48,16 @@
             <input id="send-text" type="text" class="form-control" placeholder="Enter text to send" disabled>
         </div>
         <div class="mb-3">
-            <label for="receive-text" class="form-label">Received Data</label>
-            <textarea id="receive-text" class="form-control" readonly rows="10"
-                placeholder="Received data will appear here"></textarea>
+            <div class="row gx-0">
+                <div class="col-md-2" style="flex: 0 0 11.0%; max-width: 11.0%;">
+                    <label for="receive-timestamps" class="form-label text-muted">Timestamps</label>
+                    <textarea id="receive-timestamps" class="form-control" readonly rows="10" style="text-align: right; border: none; overflow: hidden; resize: none;"></textarea>
+                </div>
+                <div class="col-md-10" style="flex: 0 0 89.0%; max-width: 89.0%;">
+                    <label for="receive-text" class="form-label">Received Data</label>
+                    <textarea id="receive-text" class="form-control" readonly rows="10" placeholder="Received data will appear here" style="resize: none;"></textarea>
+                </div>
+            </div>
         </div>
     </div>
 
