@@ -14,6 +14,22 @@ const Status = {
     NO_BLUETOOTH: 12,
 };
 
+const statusClasses = {
+    [Status.DISCONNECTED]: { bg: 'bg-secondary', text: 'text-white' },
+    [Status.CONNECTING]: { bg: 'bg-info', text: 'text-white' },
+    [Status.CONNECTED]: { bg: 'bg-success', text: 'text-white' },
+    [Status.DISCONNECTING]: { bg: 'bg-warning', text: 'text-dark' },
+    [Status.NO_TEXT]: { bg: 'bg-light', text: 'text-dark' },
+    [Status.LOST_CONNECTION]: { bg: 'bg-danger', text: 'text-white' },
+    [Status.SENDING]: { bg: 'bg-info', text: 'text-white' },
+    [Status.SENT]: { bg: 'bg-success', text: 'text-white' },
+    [Status.DISABLING_RX]: { bg: 'bg-warning', text: 'text-dark' },
+    [Status.DISABLED_RX]: { bg: 'bg-secondary', text: 'text-white' },
+    [Status.ENABLING_RX]: { bg: 'bg-info', text: 'text-white' },
+    [Status.ENABLED_RX]: { bg: 'bg-success', text: 'text-white' },
+    [Status.NO_BLUETOOTH]: { bg: 'bg-danger', text: 'text-white' },
+};
+
 class GUI
 {
     constructor()
@@ -35,10 +51,34 @@ class GUI
 
         this.isConnected = false;
         this.rxEnabled = false;
+
+        this.clearStatusClasses();
+
+        this.changeState(Status.DISCONNECTED);
+    }
+
+    clearStatusClasses() {
+        const classesToRemove = [
+            'bg-secondary', 'bg-info', 'bg-success', 'bg-warning', 'bg-danger',
+            'text-white', 'text-dark', 'bg-light'
+        ];
+        this.statusMessage.classList.remove(...classesToRemove);
+        // this.statusDevice.classList.remove(...classesToRemove);
+    }
+
+    applyStatusClasses(status) {
+        const classes = statusClasses[status];
+        if (classes) {
+            this.statusMessage.classList.add(classes.bg, classes.text);
+            // this.statusDevice.classList.add(classes.bg, classes.text);
+        }
     }
 
     changeState(status, error='')
     {
+        this.clearStatusClasses();
+        this.applyStatusClasses(status);
+
         switch (status)
         {
             case Status.DISCONNECTED:
@@ -93,6 +133,7 @@ class GUI
                 this.btnReceive.classList.replace('btn-danger', 'btn-success');
                 this.btnSend.disabled = true;
                 this.inputSend.disabled = true;
+                this.statusDevice.textContent = 'Device: None';
 
                 this.statusSpinner.style.display = 'none';
 
