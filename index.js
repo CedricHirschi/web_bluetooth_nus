@@ -23,17 +23,48 @@ gui.btnConnect.addEventListener('click', async () => {
     }
 });
 
+function hexToBytes(hex) {
+    const bytes = [];
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
+    }
+
+    // Convert to Uint8Array
+    const uint8Array = new Uint8Array(bytes.length);
+
+    for (let i = 0; i < bytes.length; i++) {
+        uint8Array[i] = bytes[i];
+    }
+
+    return uint8Array;
+}
+
 gui.btnSend.addEventListener('click', async () => {
-    const text = gui.getInputText();
+    let text = gui.getInput();
     if (!text) {
         gui.displayWarning('No text to send');
         return;
     }
 
+    if (gui.inputIsHex()) {
+        text = text.replace(/\s+/g, '');
+        if (!text) {
+            gui.displayWarning('No hex input');
+            return;
+        }
+
+        if (!/^[0-9A-Fa-f]+$/.test(text)) {
+            gui.displayWarning('Invalid hex input');
+            return;
+        }
+
+        text = hexToBytes(text);
+    }
+
     gui.changeState(Status.SENDING);
 
     try {
-        await bluetoothHandler.send(text);
+        await bluetoothHandler.send(text, gui.inputIsHex());
     } catch (error) {
         gui.displayError('Error sending data: ' + error);
     } finally {

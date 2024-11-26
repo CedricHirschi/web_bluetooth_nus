@@ -53,10 +53,12 @@ class BluetoothNUSHandler {
         this.uartRxCharacteristic = null;
     }
 
-    async send(text) {
+    async send(text, raw=false) {
         if (!this.isConnected()) throw Error('Device is not connected');
 
-        const data = new TextEncoder().encode(text);
+        let data = text;
+
+        if (!raw) data = new TextEncoder().encode(data);
 
         try {
             await this.uartTxCharacteristic.writeValue(data);

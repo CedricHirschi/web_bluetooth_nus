@@ -39,6 +39,8 @@ class GUI
         this.btnSend = document.getElementById('send-btn');
         this.btnClear = document.getElementById('clear-btn');
         this.inputSend = document.getElementById('send-text');
+        this.modeText = document.getElementById('mode-text');
+        this.modeHex = document.getElementById('mode-hex');
         this.outputReceive = document.getElementById('receive-text');
         this.warningBanner = document.getElementById('warning-banner');
         this.statusMessage = document.getElementById('status-message');
@@ -200,7 +202,12 @@ class GUI
         this.outputReceive.scrollTop = this.outputReceive.scrollHeight;
     }
 
-    getInputText()
+    inputIsHex()
+    {
+        return this.modeHex.checked;
+    }
+
+    getInput()
     {
         return this.inputSend.value;
     }
