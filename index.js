@@ -8,7 +8,7 @@ gui.btnConnect.addEventListener('click', async () => {
         gui.changeState(Status.CONNECTING);
         try {
             const deviceName = await bluetoothHandler.connect();
-            
+
             gui.changeState(Status.CONNECTED);
         } catch (error) {
             gui.changeState(Status.LOST_CONNECTION, error);
@@ -18,7 +18,7 @@ gui.btnConnect.addEventListener('click', async () => {
         gui.changeState(Status.DISCONNECTING);
 
         await bluetoothHandler.disconnect();
-        
+
         gui.changeState(Status.DISCONNECTED);
     }
 });
@@ -77,7 +77,7 @@ gui.btnReceive.addEventListener('click', async () => {
 
     if (gui.rxEnabled) {
         gui.changeState(Status.DISABLING_RX);
-        
+
         try {
             await bluetoothHandler.stopNotifications();
 
@@ -88,7 +88,7 @@ gui.btnReceive.addEventListener('click', async () => {
         }
     } else {
         gui.changeState(Status.ENABLING_RX);
-        
+
         try {
             await bluetoothHandler.startNotifications((data) => gui.addOutput(data));
 

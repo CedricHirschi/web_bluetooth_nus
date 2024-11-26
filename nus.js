@@ -28,7 +28,7 @@ class BluetoothNUSHandler {
             this.uartRxCharacteristic = await this.uartService.getCharacteristic(this.nordicUARTRXCharacteristic);
 
             this.currentDevice = device;
-            
+
             return this.deviceName;
         } catch (error) {
             this.currentDevice = null;
@@ -53,7 +53,7 @@ class BluetoothNUSHandler {
         this.uartRxCharacteristic = null;
     }
 
-    async send(text, raw=false) {
+    async send(text, raw = false) {
         if (!this.isConnected()) throw Error('Device is not connected');
 
         let data = text;
@@ -78,8 +78,7 @@ class BluetoothNUSHandler {
         await this.uartRxCharacteristic.startNotifications();
         this.uartRxCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
             const value = event.target.value;
-            const text = new TextDecoder().decode(value);
-            callback(text);
+            callback(value);
         });
     }
 

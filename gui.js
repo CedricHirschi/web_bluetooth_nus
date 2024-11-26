@@ -30,10 +30,8 @@ const statusClasses = {
     [Status.NO_BLUETOOTH]: { bg: 'bg-danger', text: 'text-white' },
 };
 
-class GUI
-{
-    constructor()
-    {
+class GUI {
+    constructor() {
         this.btnConnect = document.getElementById('connect-btn');
         this.btnReceive = document.getElementById('receive-btn');
         this.btnSend = document.getElementById('send-btn');
@@ -41,25 +39,69 @@ class GUI
         this.inputSend = document.getElementById('send-text');
         this.modeText = document.getElementById('mode-text');
         this.modeHex = document.getElementById('mode-hex');
+        this.modeOutputText = document.getElementById('output-mode-text');
+        this.modeOutputHex = document.getElementById('output-mode-hex');
         this.outputReceive = document.getElementById('receive-text');
+        this.btnSave = document.getElementById('save-btn');
         this.warningBanner = document.getElementById('warning-banner');
         this.statusMessage = document.getElementById('status-message');
         this.statusSpinner = document.getElementById('status-spinner');
         this.statusDevice = document.getElementById('status-device');
 
         this.btnClear.addEventListener('click', () => {
-            this.outputReceive.textContent = '';
+            this.outputs = [];
+            this._formatOutput();
+        });
+
+        this.modeOutputText.addEventListener('change', () => this._formatOutput());
+        this.modeOutputHex.addEventListener('change', () => this._formatOutput());
+
+        this.btnSave.addEventListener('click', () => {
+            const outputText = document.getElementById('receive-text').value;
+            if (!outputText) {
+                this.displayWarning('No output to save');
+                return;
+            }
+
+            const isHexMode = document.getElementById('output-mode-hex').checked;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+            if (isHexMode) {
+                // Convert hex string to binary
+                const hexArray = outputText.split(' ');
+                const uint8Array = new Uint8Array(hexArray.map(hex => parseInt(hex, 16)));
+                const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `output-${timestamp}.bin`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                // Save as text
+                const blob = new Blob([outputText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `output-${timestamp}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
         });
 
         this.isConnected = false;
         this.rxEnabled = false;
 
-        this.clearStatusClasses();
+        this._clearStatusClasses();
 
         this.changeState(Status.DISCONNECTED);
+
+        this.outputs = [];
     }
 
-    clearStatusClasses() {
+    _clearStatusClasses() {
         const classesToRemove = [
             'bg-secondary', 'bg-info', 'bg-success', 'bg-warning', 'bg-danger',
             'text-white', 'text-dark', 'bg-light'
@@ -68,7 +110,7 @@ class GUI
         // this.statusDevice.classList.remove(...classesToRemove);
     }
 
-    applyStatusClasses(status) {
+    _applyStatusClasses(status) {
         const classes = statusClasses[status];
         if (classes) {
             this.statusMessage.classList.add(classes.bg, classes.text);
@@ -76,13 +118,11 @@ class GUI
         }
     }
 
-    changeState(status, error='')
-    {
-        this.clearStatusClasses();
-        this.applyStatusClasses(status);
+    changeState(status, error = '') {
+        this._clearStatusClasses();
+        this._applyStatusClasses(status);
 
-        switch (status)
-        {
+        switch (status) {
             case Status.DISCONNECTED:
                 this.btnConnect.textContent = 'Connect';
                 this.statusMessage.textContent = 'Disconnected';
@@ -185,45 +225,71 @@ class GUI
         }
     }
 
-    displayWarning(message)
-    {
+    displayWarning(message) {
         this.statusMessage.textContent = message;
     }
 
-    displayError(message)
-    {
+    displayError(message) {
         this.statusMessage.textContent = message;
     }
 
-    addOutput(text)
-    {
-        this.outputReceive.textContent += text;
+    addOutput(text) {
+        this.outputs.push(text);
+
+        console.log(this.outputs);
+
+        this._formatOutput();
+    }
+
+    // private method
+    _formatOutput() {
+
+        // this.outputs is an array of ArrayBuffer
+
+        let text = '';
+
+        if (this.outputIsHex()) {
+            for (let i = 0; i < this.outputs.length; i++) {
+                for (let j = 0; j < this.outputs[i].byteLength; j++) {
+                    text += this.outputs[i].getUint8(j).toString(16).padStart(2, '0').toUpperCase() + ' ';
+                }
+            }
+        } else {
+            for (let i = 0; i < this.outputs.length; i++) {
+                for (let j = 0; j < this.outputs[i].byteLength; j++) {
+                    text += String.fromCharCode(this.outputs[i].getUint8(j));
+                }
+            }
+        }
+
+        this.outputReceive.textContent = text;
 
         this.outputReceive.scrollTop = this.outputReceive.scrollHeight;
     }
 
-    inputIsHex()
-    {
+    inputIsHex() {
         return this.modeHex.checked;
     }
 
-    getInput()
-    {
+    outputIsHex() {
+        return this.modeOutputHex.checked;
+    }
+
+    getInput() {
         return this.inputSend.value;
     }
 
-    displayWarningBanner()
-    {
+    displayWarningBanner() {
         this.warningBanner.style.display = 'block';
-    
+
         this.changeState(Status.NO_BLUETOOTH);
 
         const user = navigator.userAgent;
         const os = user.includes('Android') ? 'Android' :
-                user.includes('iPhone') || user.includes('iPad') ? 'iOS' :
+            user.includes('iPhone') || user.includes('iPad') ? 'iOS' :
                 user.includes('Linux') ? 'Linux' :
-                user.includes('Windows') ? 'Windows' :
-                user.includes('Mac') ? 'MacOS' : 'Unknown';
+                    user.includes('Windows') ? 'Windows' :
+                        user.includes('Mac') ? 'MacOS' : 'Unknown';
 
         this.warningBanner.innerHTML = `<strong>Warning!</strong> Bluetooth is not available in this session.<br>`;
 
