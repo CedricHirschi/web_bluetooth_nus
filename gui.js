@@ -33,7 +33,8 @@ const statusClasses = {
 class GUI {
     constructor() {
         this.btnConnect = document.getElementById('connect-btn');
-        this.btnReceive = document.getElementById('receive-btn');
+        this.checkReceive = document.getElementById('receive-chk');
+        this.statusReceive = document.getElementById('receive-st');
         this.btnSend = document.getElementById('send-btn');
         this.btnClear = document.getElementById('clear-btn');
         this.inputSend = document.getElementById('send-text');
@@ -127,14 +128,15 @@ class GUI {
                 this.btnConnect.textContent = 'Connect';
                 this.statusMessage.textContent = 'Disconnected';
                 this.btnConnect.disabled = false;
-                this.btnReceive.disabled = true;
-                this.btnReceive.textContent = 'Enable Reception';
-                this.btnReceive.classList.replace('btn-danger', 'btn-success');
+                this.checkReceive.disabled = true;
+                this.checkReceive.checked = false;
+                this.statusReceive.textContent = 'Receive: Off';
                 this.btnSend.disabled = true;
                 this.inputSend.disabled = true;
                 this.statusDevice.textContent = 'Device: None';
 
                 this.isConnected = false;
+                this.rxEnabled = false;
                 break;
             case Status.CONNECTING:
                 this.statusMessage.textContent = 'Connecting...';
@@ -146,13 +148,16 @@ class GUI {
                 this.btnConnect.textContent = 'Disconnect';
                 this.statusMessage.textContent = 'Connected to ' + bluetoothHandler.deviceName;
                 this.btnConnect.disabled = false;
-                this.btnReceive.disabled = false;
+                this.checkReceive.disabled = false;
+                this.checkReceive.checked = false;
+                this.statusReceive.textContent = 'Receive: Off';
                 this.btnSend.disabled = false;
                 this.inputSend.disabled = false;
                 this.statusSpinner.style.display = 'none';
                 this.statusDevice.textContent = 'Device: ' + bluetoothHandler.deviceName;
 
                 this.isConnected = true;
+                this.rxEnabled = false;
                 break;
             case Status.DISCONNECTING:
                 this.statusMessage.textContent = 'Disconnecting...';
@@ -170,9 +175,9 @@ class GUI {
 
                 this.btnConnect.textContent = 'Connect';
                 this.btnConnect.disabled = false;
-                this.btnReceive.disabled = true;
-                this.btnReceive.textContent = 'Enable Reception';
-                this.btnReceive.classList.replace('btn-danger', 'btn-success');
+                this.checkReceive.disabled = true;
+                this.checkReceive.checked = false;
+                this.statusReceive.textContent = 'Receive: Off';
                 this.btnSend.disabled = true;
                 this.inputSend.disabled = true;
                 this.statusDevice.textContent = 'Device: None';
@@ -180,6 +185,7 @@ class GUI {
                 this.statusSpinner.style.display = 'none';
 
                 this.isConnected = false;
+                this.rxEnabled = false;
                 break;
             case Status.SENDING:
                 this.btnSend.textContent = 'Sending...';
@@ -192,32 +198,37 @@ class GUI {
                 this.inputSend.disabled = false;
                 break;
             case Status.DISABLING_RX:
-                this.btnReceive.textContent = 'Disabling...';
-                this.btnReceive.disabled = true;
+                this.checkReceive.disabled = true;
+                this.statusReceive.textContent = 'Receive: Disabling...';
                 break;
             case Status.DISABLED_RX:
-                this.btnReceive.textContent = 'Enable Reception';
-                this.btnReceive.classList.replace('btn-danger', 'btn-success');
-                this.btnReceive.disabled = false;
+                this.checkReceive.disabled = false;
+                this.checkReceive.checked = false;
+                this.statusReceive.textContent = 'Receive: Off';
 
                 this.rxEnabled = false;
                 break;
             case Status.ENABLING_RX:
-                this.btnReceive.textContent = 'Enabling...';
-                this.btnReceive.disabled = true;
+                this.checkReceive.disabled = true;
+                this.statusReceive.textContent = 'Receive: Enabling...';
                 break;
             case Status.ENABLED_RX:
-                this.btnReceive.textContent = 'Disable Reception';
-                this.btnReceive.classList.replace('btn-success', 'btn-danger');
-                this.btnReceive.disabled = false;
+                this.checkReceive.disabled = false;
+                this.checkReceive.checked = true;
+                this.statusReceive.textContent = 'Receive: On';
 
                 this.rxEnabled = true;
                 break;
             case Status.NO_BLUETOOTH:
                 this.btnConnect.disabled = true;
-                this.btnReceive.disabled = true;
+                this.checkReceive.disabled = true;
+                this.checkReceive.checked = false;
+                this.statusReceive.textContent = 'Receive: Off';
                 this.btnSend.disabled = true;
                 this.inputSend.disabled = true;
+
+                this.isConnected = false;
+                this.rxEnabled = false;
                 break;
 
             default:

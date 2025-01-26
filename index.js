@@ -11,7 +11,14 @@ gui.btnConnect.addEventListener('click', async () => {
 
             gui.changeState(Status.CONNECTED);
         } catch (error) {
-            gui.changeState(Status.LOST_CONNECTION, error);
+            if (error.name === 'SecurityError') {
+                gui.changeState(Status.LOST_CONNECTION, 'Your browser does not allow Bluetooth connections. Please check your settings.');
+            } else if (error.name === 'NetworkError') {
+                gui.changeState(Status.LOST_CONNECTION, 'Please retry connecting to the device.');
+            } else {
+                gui.changeState(Status.LOST_CONNECTION, error);
+            }
+
             await bluetoothHandler.disconnect();
         }
     } else {
@@ -72,7 +79,7 @@ gui.btnSend.addEventListener('click', async () => {
     }
 });
 
-gui.btnReceive.addEventListener('click', async () => {
+gui.checkReceive.addEventListener('click', async () => {
     if (!bluetoothHandler.isConnected()) return;
 
     if (gui.rxEnabled) {
